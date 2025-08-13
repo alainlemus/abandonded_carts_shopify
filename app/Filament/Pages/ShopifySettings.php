@@ -2,10 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use App\Jobs\SyncAbandonedCarts;
 use Filament\Pages\Page;
 use Filament\Forms;
 use App\Models\Shop;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+
+use Filament\Notifications\Notification;
 
 class ShopifySettings extends Page
 {
@@ -60,5 +64,33 @@ class ShopifySettings extends Page
         session(['tenant_subdomain' => $this->subdomain]);
 
         return redirect()->route('shopify.auth', ['shop' => $this->shopDomain]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('syncAbandonedCarts')
+                ->label('Sincronizar carritos abandonados')
+                ->action(function () {
+                    $tenant = Auth::user()->tenant;
+                    $shop = \App\Models\Shop::where('tenant_id', $tenant->id)->first();
+
+                    if (!$shop) {
+                        Notification::make()
+                            ->title('No se encontró la tienda')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    tenancy()->initialize($tenant->id);
+                    \App\Jobs\SyncAbandonedCarts::dispatch($shop);
+
+                    Notification::make()
+                        ->title('Sincronización iniciada')
+                        ->success()
+                        ->send();
+                }),
+        ];
     }
 }

@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('abandoned_cart_id');
             $table->foreign('abandoned_cart_id')->references('id')->on('abandoned_carts')->onDelete('cascade');
+            $table->unsignedBigInteger('shop_id'); // Nueva columna
+            $table->foreign('shop_id')->references('id')->on('shops')->onDelete('cascade'); // Clave foránea
             $table->string('code')->unique();
             $table->decimal('amount', 5, 2);
             $table->timestamps();

@@ -26,7 +26,8 @@ class RegisterShopifyWebhooks extends Command
         }
 
         // Buscar la tienda
-        $shop = Shop::where('shopify_domain', $shopDomain)->first();
+        //$shop = Shop::where('shopify_domain', $shopDomain)->first();
+        $shop = Shop::on('mysql')->where('shopify_domain', $shopDomain)->first();
 
         if (!$shop) {
             Log::error("No se encontró una tienda para el dominio {$shopDomain}.");
@@ -39,21 +40,32 @@ class RegisterShopifyWebhooks extends Command
 
         Log::info("Registrando webhooks para la tienda {$shopDomain}.");
 
-        $shopify->setAccessToken($shop->access_token, $shopDomain);
+        $shopify->setAccessToken($shop->access_token, $shopDomain); //truena aqui
+
+        Log::info('se ha inicializado el token de acceso para la tienda', [
+            'shopDomain' => $shopDomain,
+            'access_token' => $shop->access_token,
+        ]);
 
         $webhooks = [
             [
                 'topic' => 'checkouts/create',
-                'address' => route('webhooks.shopify', [], false),
+                'address' => route('webhooks.shopify', [], true),
             ],
             [
                 'topic' => 'checkouts/update',
-                'address' => route('webhooks.shopify', [], false),
+                'address' => route('webhooks.shopify', [], true),
             ],
         ];
 
         foreach ($webhooks as $webhook) {
-            if ($shopify->registerWebhook($shop, $webhook['topic'], $webhook['address'])) {
+            Log::info('Intentando registrar webhook', $webhook);
+
+            $result = $shopify->registerWebhook($shop, $webhook['topic'], $webhook['address']);
+
+            Log::info('Resultado de registerWebhook', ['resultado' => $result]);
+
+            if ($result) {
                 $this->info("Webhook {$webhook['topic']} registrado para {$shopDomain}.");
             } else {
                 $this->error("Error al registrar webhook {$webhook['topic']} para {$shopDomain}.");

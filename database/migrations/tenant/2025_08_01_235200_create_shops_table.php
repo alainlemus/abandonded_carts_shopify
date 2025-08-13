@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('shops', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id');
             $table->string('shopify_domain')->unique();
             $table->string('access_token')->nullable();
-            $table->string('name')->nullable();
+            $table->string('tenant_id');
+            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
             $table->timestamps();
         });
     }

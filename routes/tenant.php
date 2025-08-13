@@ -17,7 +17,4 @@ Route::middleware([
     Route::get('/', function () {
         return 'Tenant ID actual: ' . tenant('id');
     });
-
-
-
 });

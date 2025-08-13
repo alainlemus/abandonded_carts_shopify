@@ -62,6 +62,7 @@ class ShopifyAuthController extends Controller
         $subdomain = str_replace('.myshopify.com', '', $shopDomain);
 
         if ($state !== session('shopify_nonce')) {
+            Log::error('Estado inválido en la respuesta de Shopify');
             return redirect()->to("http://{$subdomain}.app-localhost.test/admin/{$shopDomain}/shopify-settings")
                 ->withErrors(['auth' => 'Error de autenticación: estado inválido.']);
         }
@@ -72,7 +73,14 @@ class ShopifyAuthController extends Controller
             'code' => $code,
         ]);
 
+        Log::info('Respuesta de Shopify', [
+            'client_id' => config('services.shopify.api_key'),
+            'client_secret' => config('services.shopify.api_secret'),
+            'code' => $code,
+        ]);
+
         if ($response->failed()) {
+            Log::error('Error al obtener el token de acceso de Shopify');
             return redirect()->to("http://{$subdomain}.app-localhost.test/admin/{$shopDomain}/shopify-settings")
                 ->withErrors(['auth' => 'No se pudo obtener el token de acceso.']);
         }
@@ -106,7 +114,7 @@ class ShopifyAuthController extends Controller
 
         } else {
 
-            Log::info('Blog creado',[
+            Log::info('Shop creado',[
                 'tenant_id' => $subdomain,
                 'shopify_domain' => $shopDomain,
                 'access_token' => $accessToken,

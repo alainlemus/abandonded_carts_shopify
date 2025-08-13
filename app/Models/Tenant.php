@@ -56,4 +56,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
     }
 
+    public function suscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class, 'tenant_id', 'id');
+    }
+
 }

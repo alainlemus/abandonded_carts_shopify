@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ShopifyService
 {
@@ -21,6 +22,7 @@ class ShopifyService
             'X-Shopify-Access-Token' => $this->accessToken,
         ])->get("https://{$this->shopDomain}/admin/api/" . config('services.shopify.api_version') . "/checkouts.json");
 
+        Log::info('Obteniendo carritos abandonados para shop: ' . $response);
         return $response->successful() ? $response->json()['checkouts'] : [];
     }
 

@@ -110,7 +110,7 @@ class TenantController extends Controller
                 throw new \Exception('No se encontró el tenant creado.');
             }
 
-            try {
+            /*try {
                 $tenant->run(function () {
                     // Asegurarse de que las migraciones usen la conexión correcta
                     Artisan::call('migrate', [
@@ -121,7 +121,7 @@ class TenantController extends Controller
             } catch (\Exception $e) {
                 Log::error('Error al ejecutar migraciones para el tenant: ' . $e->getMessage(), ['exception' => $e]);
                 throw new \Exception('Error al ejecutar migraciones: ' . $e->getMessage());
-            }
+            }*/
 
             Log::info('Migraciones ejecutadas para el tenant', [
                 'tenant_id' => $tenantId,
@@ -131,11 +131,6 @@ class TenantController extends Controller
             // Crear cliente y sesión de Stripe
             $stripeCustomerId = $stripe->createCustomer($user);
             $user->update(['stripe_id' => $stripeCustomerId]);
-
-            Log::info('Cliente de Stripe creado', [
-                'user_id' => $user->id,
-                'stripe_customer_id' => $stripeCustomerId,
-            ]);
 
             $domain = $request->subdomain . '.app-localhost.test';
 
@@ -148,9 +143,33 @@ class TenantController extends Controller
                     'quantity' => 1,
                 ]],
                 'success_url' => "http://" . ($request->subdomain ?? 'demo') . ".app-localhost.test/admin/".$tenantId."/shopify-settings",
-                //'success_url' => "http://{$domain}/admin/shopify-settings",
                 'cancel_url' => route('register'),
             ]);
+
+            Log::info('Cliente de Stripe creado', [
+                'user_id' => $user->id,
+                'tenant_id' => $tenantId,
+                'stripe_customer_id' => $stripeCustomerId,
+                'price' => $priceId
+            ]);
+
+            Log::info('Sesión de Stripe creada', ['user_id' => $user->id,
+                'tenant_id' => $tenantId,
+                'stripe_subscription_id' => $stripeCustomerId,
+                'price' => $priceId,
+                'status' => 'ACTIVO'
+            ]);
+
+            $suscription = Subscription::create([
+                'user_id' => $user->id,
+                'tenant_id' => $tenantId,
+                'stripe_subscription_id' => $stripeCustomerId,
+                'status' => 'ACTIVO',
+            ]);
+
+            if (!$suscription) {
+                throw new \Exception('No se pudo registrar los datos de subscripcion.');
+            }
 
             if (!$checkoutSession || !isset($checkoutSession->id)) {
                 throw new \Exception('No se pudo crear la sesión de Stripe.');
